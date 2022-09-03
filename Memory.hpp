@@ -7,45 +7,45 @@
 
 class Memory {
 private:
-    HANDLE handle;
-    PTR pid;
-    HWND hwnd;
+    static HANDLE handle;
+    static PTR pid;
+    static HWND hwnd;
 
 public:
-    void setProcess(const char* szName) { // Counter-Strike: Global Offensive - Direct3D 9
+    static void setProcess(const char* szName) { // Counter-Strike: Global Offensive - Direct3D 9
         do {
-            this->hwnd = FindWindowA(0, szName);
+            hwnd = FindWindowA(0, szName);
             sleep(50);
-        } while (!this->hwnd);
+        } while (!hwnd);
 
         DWORD temp;
-        GetWindowThreadProcessId(this->hwnd, &temp);
-        this->pid = temp;
+        GetWindowThreadProcessId(hwnd, &temp);
+        pid = temp;
 
-        this->handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, this->pid);
+        handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
     }
 
     template <typename Type>
-    Type Read(PTR input) {
+    static Type Read(PTR input) {
         Type temp;
-        ReadProcessMemory(this->handle, (LPVOID)input, &temp, sizeof(temp), 0);
+        ReadProcessMemory(handle, (LPVOID)input, &temp, sizeof(temp), 0);
         return temp;
     }
 
-    std::string strRead(PTR input) {
+    static std::string strRead(PTR input) {
         char temp[128];
-        ReadProcessMemory(this->handle, (PBYTE*)input, &temp, sizeof(temp), 0);
+        ReadProcessMemory(handle, (PBYTE*)input, &temp, sizeof(temp), 0);
         return std::string(temp);
     }
 
     template <typename Type>
-    void Write(PTR input, Type output) {
-        WriteProcessMemory(this->handle, (LPVOID)input, &output, sizeof(output), 0);
+    static void Write(PTR input, Type output) {
+        WriteProcessMemory(handle, (LPVOID)input, &output, sizeof(output), 0);
     }
 
-    PTR getBase(const char* szModuleName) { // client.dll, engine.dll
+    static PTR getBase(const char* szModuleName) { // client.dll, engine.dll
         PTR dwModuleBaseAddress = 0;
-        HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, this->pid);
+        HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pid);
         if (hSnapshot != INVALID_HANDLE_VALUE) {
             MODULEENTRY32 ModuleEntry32;
             ModuleEntry32.dwSize = sizeof(MODULEENTRY32);
@@ -62,3 +62,14 @@ public:
         return dwModuleBaseAddress;
     }
 };
+
+HANDLE Memory::handle = NULL;
+PTR Memory::pid = NULL;
+HWND Memory::hwnd = NULL;
+
+// int main() {
+//     Memory::setProcess("Counter-Strike: Global Offensive - Direct3D 9");
+//     PTR client = Memory::getBase("client.dll");
+//
+//     std::cout << Memory::Read<int>(client + 4) << std::endl;
+// }
